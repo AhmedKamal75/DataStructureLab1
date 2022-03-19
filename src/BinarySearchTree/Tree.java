@@ -11,54 +11,65 @@ public class Tree {
     public void insert(String data) {
         if (root == null) {
             root = new Node(data);
+        } else{
+            balance(insert(this.root, data));
         }
-        insert(this.root, data);
     } // works
 
-    private void insert(Node root, String data) {
+    private Node insert(Node root, String data) {
 
-        if (data.compareToIgnoreCase(root.getData()) < 0) { // data < root.data
+        if (data.compareTo(root.getData()) < 0) { // data < root.data
             if (root.getLeft() == null) {
                 Node newNode = new Node(data);
                 root.setLeft(newNode);
                 newNode.setParent(root);
+                return newNode;
             } else {
-                insert(root.getLeft(), data);
+                return insert(root.getLeft(), data);
             }
-        } else if (data.compareToIgnoreCase(root.getData()) > 0) { // data > root.data
+        } else if (data.compareTo(root.getData()) > 0) { // data > root.data
             if (root.getRight() == null) {
                 Node newNode = new Node(data);
                 root.setRight(newNode);
                 newNode.setParent(root);
+                return newNode;
             } else {
-                insert(root.getRight(), data);
+                return insert(root.getRight(), data);
             }
-        } // else
+        } else{ // else
+            return null;
+        }
+
     } // works
 
     public void traverse(Traversal traversalType) {
         if (this.root != null) {
             traversal(this.root, traversalType);
         }
+        System.out.println();
     } // works
 
     private void traversal(Node node, Traversal traversalType) {
         if (traversalType == Traversal.PRE_ORDER) {
-            System.out.println(node.getData());
+            doDo(node);
         }
         if (node.getLeft() != null) {
             traversal(node.getLeft(), traversalType);
         }
         if (traversalType == Traversal.IN_ORDER) {
-            System.out.println(node.getData());
+            doDo(node);
         }
         if (node.getRight() != null) {
             traversal(node.getRight(), traversalType);
         }
         if (traversalType == Traversal.POST_ORDER) {
-            System.out.println(node.getData());
+            doDo(node);
         }
     } // works
+
+    private void doDo(Node node){
+        System.out.print(node.getData() + ",");
+    }
 
     public String searchData(String data) {
         Node node = find(data);
@@ -83,9 +94,9 @@ public class Tree {
         if (searchNode.getData().equalsIgnoreCase(node.getData())) {
             return searchNode;
         } else {
-            if (node.getData().compareToIgnoreCase(searchNode.getData()) < 0) {
+            if (node.getData().compareTo(searchNode.getData()) < 0) {
                 return findNode(searchNode.getLeft(), node);
-            } else if (node.getData().compareToIgnoreCase(searchNode.getData()) > 0) {
+            } else if (node.getData().compareTo(searchNode.getData()) > 0) {
                 return findNode(searchNode.getRight(), node);
             }
         }
@@ -128,26 +139,29 @@ public class Tree {
         return null;
     } // works
 
-    public boolean delete(String data) {
+    public Node delete(String data) {
         return delete(find(data));
     } // works
 
-    public boolean delete(Node node) {
+    private Node delete(Node node) { // returns the last known relative (replacement, parent)
         if (node != null) {
+            Node relativeNode;
             if (node.getLeft() == null && node.getRight() == null) { // first case, no children
-                deleteNoChildren(node); // works
+                relativeNode = deleteNoChildren(node); // works
             } else if (node.getLeft() != null && node.getRight() == null) { // second case, left exist
-                deleteOneChild(node, true);
+                relativeNode = deleteOneChild(node, true);
             } else if (node.getLeft() == null && node.getRight() != null) { // second case, right exist
-                deleteOneChild(node, false);
+                relativeNode = deleteOneChild(node, false);
             } else {
-                deleteTwoChildren(node);
+                relativeNode = deleteTwoChildren(node);
             }
+            balance(relativeNode);
+            return relativeNode;
         }
-        return true;
+        return null;
     } // works
 
-    private void deleteTwoChildren(Node node) {
+    private Node deleteTwoChildren(Node node) {
         // get replacement node, i choose the right branch to get a replacement
 //        Node tempNode = min(node.getRight());
         Node tempNode = max(node.getLeft());
@@ -173,19 +187,20 @@ public class Tree {
             this.root = replacementNode;
         }
         // setting the left child
-        if (leftSibling != null){
+        if (leftSibling != null) {
             replacementNode.setLeft(leftSibling);
             leftSibling.setParent(replacementNode);
 
         }
         // setting the right child
-        if (rightSibling != null){
+        if (rightSibling != null) {
             replacementNode.setRight(rightSibling);
             rightSibling.setParent(replacementNode);
         }
+        return replacementNode;
     } // works
 
-    private void deleteOneChild(Node node, boolean hasLeftChild) {
+    private Node deleteOneChild(Node node, boolean hasLeftChild) {
         Node parent = node.getParent();
 
         if (hasLeftChild) { // node has a left child
@@ -214,6 +229,7 @@ public class Tree {
                 node.getLeft().setParent(replacementNode);
             }
             replacementNode.setLeft(node.getLeft());
+            return replacementNode;
 
         } else { //  node has a right child
 
@@ -241,11 +257,11 @@ public class Tree {
                 node.getRight().setParent(replacementNode);
             }
             replacementNode.setRight(node.getRight());
-
+            return replacementNode;
         }
     } //works
 
-    private void deleteNoChildren(Node node) {
+    private Node deleteNoChildren(Node node) {
         Node parent = node.getParent();
         if (parent != null) {
             if (parent.getLeft() == node) { // node is a left child
@@ -258,6 +274,164 @@ public class Tree {
         } else {
             this.root = null;
         }
+        return parent;
+    } // works
+
+    private int nodeH(Node node) {
+        if (node == null) {
+            return -1;
+        } else if (node.getLeft() == null && node.getRight() == null) { // a leaf node
+            return 0;
+        } else {
+            return Math.max(nodeH(node.getLeft()), nodeH(node.getRight())) + 1;
+        }
+    } // node height
+
+    private int nodeB(Node node) {
+        if (node == null) {
+            return 0;
+        }
+        return nodeH(node.getLeft()) - nodeH(node.getRight());
+    } // node balance
+
+    public int getBalanceOf(String data) {
+        Node node = find(data);
+        if (node != null) {
+            return nodeB(node);
+        }
+        return Integer.MAX_VALUE;
+    }
+
+    private void balance(Node node) {
+        if (node == null) {
+            return;
+        }
+        if (node == this.root) {
+            int bf = nodeB(node);
+            switch (bf) {
+                case 2 -> // left heavy
+                        rightRotate(node.getLeft(), node);
+                case -2 -> // right heavy
+                        leftRotate(node, node.getRight());
+            }
+        }
+        int bf = nodeB(node.getParent());
+        switch (bf) {
+            case 2 -> { // left heavy
+                if (nodeH(node.getLeft()) > nodeH(node.getRight())) { // outside case
+//      imbalanced node --> 341
+//                         /   \
+//  working at(node) --> 241  123
+//                       /
+//        new node --> 324
+                    rightRotate(node, node.getParent());
+                } else if (nodeH(node.getLeft()) < nodeH(node.getRight())) { // inside case
+//      imbalanced node --> 341
+//                         /   \
+//  working at(node) --> 241  123
+//                          \
+//             new node --> 235
+                    Node rightChild = node.getRight();
+                    Node imbalancedNode = node.getParent();
+                    leftRotate(node, rightChild);
+                    rightRotate(rightChild, imbalancedNode);
+                }
+            }
+
+
+            case -2 -> { // right heavy
+                if (nodeH(node.getLeft()) < nodeH(node.getRight())) { // outside case
+//                          341 <-- imbalanced node
+//                         /   \
+//                        241  123 <-- working at(node)
+//                                \
+//                                161 <-- new node
+                    leftRotate(node.getParent(), node);
+                } else if (nodeH(node.getLeft()) > nodeH(node.getRight())) { // inside case
+//                          341 <-- imbalanced node
+//                         /   \
+//                        241  123 <-- working at(node)
+//                            /
+//                          235 <-- new node
+                    Node leftChild = node.getLeft();
+                    Node imbalancedNode = node.getParent();
+                    rightRotate(leftChild, node);
+                    leftRotate(imbalancedNode, leftChild);
+
+                }
+            }
+        }
+        //
+
+        balance(node.getParent());
+
+    }
+
+    private void leftRotate(Node node1, Node node2) {
+//                                   <==      | <-- (nr)
+//                 node2 --> 341             241 <-- node1
+//                          /   \           /   \ <-- needs redirection(nr)
+//               node1 --> 241  123        324  341 <--node2
+//                        /   \       (nr) --> /  \
+//                      324  235             235   123
+        Node node1Parent = node1.getParent();
+        Node node2Left = node2.getLeft();
+
+        // parent of new top node handling
+        node2.setParent(node1Parent);
+        if (node1Parent != null) {//                                         /
+            if (node1Parent.getLeft() == node1) { // node1 is a left child 241
+                node1Parent.setLeft(node2);
+            }//                                                                   \
+            else if (node1Parent.getRight() == node1) { // node 1 is a right child 241
+                node1Parent.setRight(node2);
+            }
+        } else {
+            this.root = node2;
+        }
+
+        // 235
+        if (node2Left != null) {
+            node2Left.setParent(node1);
+        }
+        node1.setRight(node2Left);
+
+        // rotation
+        node2.setLeft(node1);
+        node1.setParent(node2);
+
+    } // works
+
+    private void rightRotate(Node node1, Node node2) {  // works
+//                   (nr) --> |     ==>
+//                 node2 --> 341             241  <-- node1
+//needs redirection(nr)-->  /   \           /   \
+//               node1 --> 241  123        324  341 <--node2
+//                        /   \  <--(nr)        /  \
+//                      324  235             235   123
+        Node node1Right = node1.getRight();
+        Node node2Parent = node2.getParent();
+
+        // parent of new top node handling
+        node1.setParent(node2Parent);
+        if (node2Parent != null) {//                                      \
+            if (node2Parent.getLeft() == node2) { // node2 is a left child 241
+                node2Parent.setLeft(node1);
+            }//                                                                   /
+            else if (node2Parent.getRight() == node2) { // node2 is a right child 241
+                node2Parent.setRight(node1);
+            }
+        } else {
+            this.root = node1;
+        }
+        // 235
+        if (node1Right != null) {
+            node1Right.setParent(node2);
+        }
+        node2.setLeft(node1Right);
+        // rotation
+        node1.setRight(node2);
+        node2.setParent(node1);
     } // works
 
 }

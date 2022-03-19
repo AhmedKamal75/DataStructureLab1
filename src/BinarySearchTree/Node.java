@@ -15,6 +15,7 @@ public class Node implements Comparable<Node> {
         this.parent = parent;
     }
 
+
     public Node(String data) {
         this(data, null, null, null);
     }
